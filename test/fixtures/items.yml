@@ -1,47 +1,11 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-one:
-  id: 1
-  description: MyText
-  ad: 1.5
-  ap: 1.5
-  total_cost: 1
-  base_cost: 1
-  as: 1.5
-  lifesteal: 1.5
-  arpen: 1.5
-  mrpen: 1.5
-  cdr: 1.5
-  mana: 1.5
-  hp: 1.5
-  mana5: 1.5
-  hp5: 1.5
-  msflat: 1
-  mspercent: 1.5
-  armor: 1.5
-  magres: 1.5
-  tenacity: 1.5
-  crit: 1.5
-
-two:
-  id: 1
-  description: MyText
-  ad: 1.5
-  ap: 1.5
-  total_cost: 1
-  base_cost: 1
-  as: 1.5
-  lifesteal: 1.5
-  arpen: 1.5
-  mrpen: 1.5
-  cdr: 1.5
-  mana: 1.5
-  hp: 1.5
-  mana5: 1.5
-  hp5: 1.5
-  msflat: 1
-  mspercent: 1.5
-  armor: 1.5
-  magres: 1.5
-  tenacity: 1.5
-  crit: 1.5
+# This model initially had no columns defined.  If you add columns to the
+# model remove the '{}' from the fixture names and add the columns immediately
+# below each fixture, per the syntax in the comments below
+#
+one: {}
+# column: value
+#
+two: {}
+#  column: value

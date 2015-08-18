@@ -3,17 +3,24 @@
 
 <table>
   <tr>
-    <% sample = @items.to_a.sample  %>
-    <% sample.attributes.each_key do |i|  %>
-    <th><%= i  if i !="description"%></th>
-    <% end %>
+  <th>name</th>
+  <th>id</th>
+  <th>cost</th>
+  <th>stats</th>
+  
   </tr>
- 
   <% @items.each do |item| %>
     <tr>
+      <td><%= item.attributes["name"]%></td>
+      <td><%= item.attributes["id"]%></td>
+      <td><%= item.attributes["cost"]%></td>
+      <td>
       <% item.attributes.each do |k,i| %>
-      <td><%= i if k!="description" %></td>
+      <%= k.to_s+" "+i.to_s unless i.blank? || k=="name"||k=="id"||k=="description"||k=="cost" %>
       <% end %>
+      </td>
+      <td><%= item.attributes["description"] %></td>
     </tr>
   <% end %>
+  
 </table>

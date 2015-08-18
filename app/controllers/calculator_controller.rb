@@ -4,14 +4,16 @@ class CalculatorController < ApplicationController
     def index 
         @api_key = Rails.application.secrets.API_KEY
         @region = params[:region].downcase
-        @stats = Hash.new(0)
+        
         @items = []
+        @runes = []
         id = name_to_s_id params[:name]
         if params[:m_id].blank?
-            @items = last_game_data id 
+             last_game_data id 
         else 
-            @items = match_data id,params[:m_id]
+             match_data id,params[:m_id]
         end 
+        session[:runes] = @runes
         session[:items] = @items
         session[:champ] = @champ
     end 
@@ -29,19 +31,24 @@ class CalculatorController < ApplicationController
     
     
     def last_game_data s_id
-        arr = []
+        
         response = JSON.parse HTTParty.get( 'https://'+@region+'.api.pvp.net/api/lol/'+@region+'/v2.2/matchhistory/'+s_id+'?beginIndex=0&endIndex=1&api_key='+@api_key).body
         @champ = Champion.find(response["matches"][0]["participants"][0]["championId"])
         6.times do |i|
             break if response["matches"][0]["participants"][0]["stats"]["item"+i.to_s] == nil
-            arr << response["matches"][0]["participants"][0]["stats"]["item"+i.to_s]
+            @items << response["matches"][0]["participants"][0]["stats"]["item"+i.to_s]
         end
-        arr
+        response["matches"][0]["participants"][0]["runes"].each do |rune|
+            rune["rank"].times do |n|
+                @runes<< rune["runeId"]
+            end
+        end
     end 
     
     
     def match_data s_id,match_id 
-        arr = []
+        
+        
         participant = 0
     
         response = JSON.parse HTTParty.get('https://'+@region+'.api.pvp.net/api/lol/'+@region+'/v2.2/match/'+match_id+'?includeTimeline=false&api_key='+@api_key).body
@@ -53,12 +60,16 @@ class CalculatorController < ApplicationController
         @champ = Champion.find(response["participants"][participant]["championId"])
         6.times do |i|
          break if response["participants"][participant]["stats"]["item"+i.to_s] == nil
-            arr << response["participants"][participant]["stats"]["item"+i.to_s]
+            @items << response["participants"][participant]["stats"]["item"+i.to_s]
         end
-     
-        arr
+        response["participants"][participant]["runes"].each do |i|
+            i["rank"].times do |n|
+                @runes<< i["runeId"]
+            end
+        end
+        
     end 
-    def sum_item_stats
+    def item_stats
         items = []
         hash = Hash.new(0)
         @items.each do |i|
@@ -69,50 +80,103 @@ class CalculatorController < ApplicationController
             hash[key]+=value.to_f if key != "id" && key != "description" && key!="name" && key!="base_cost"
         end 
         end
+        hash["FlatCritChanceMod"]*=100
        hash#.delete_if{|k,v| v.blank?||v==0.0}
     end 
     
     def champ_stats
-        
-        @stats["crit"]*=100
-        @stats["ad"] += @champ["ad"]+(@champ["ad_per_level"]*(@level-1))
-        @stats["as"] = ( (0.625 / ( 1+@champ["as_offset"] ) )*( 100+( (@champ["as_per_level"]*@level-1) + @stats["as"] *100 ) ) ) / 100.0
-         if @champ["key"] == "Yasuo"
-         @stats["crit"] *=2
-         end
-         @stats["armor"] +=@champ["armor"]+(@champ["armor_per_level"]*(@level-1))
-         @stats["magres"] +=@champ["magres"]+(@champ['magres_per_level']*(@level-1))
-         @stats["movespeed"] = (@champ["msflat"]+@stats["msflat"])*(1+@stats["mspercent"]) #placeholder
-         @stats["cdr"] = 40 if @stats["cdr"]>40
-         
+        def c_per_lvl key
+        key+="perlevel"
+        @champ[key]*(@level-1)
+        end 
+        hash = Hash.new(0)
+        hash["key"] =@champ["key"]
+        hash["attackdamage"] = @champ["attackdamage"]+ c_per_lvl("attackdamage")
+        hash["attackspeed"] =  (0.625 / ( 1+@champ["attackspeedoffset"] )) 
+        hash["attackspeedperlevel"]=@champ["attackspeedperlevel"]
+        hash["armor"] = @champ["armor"] + c_per_lvl("armor")
+        hash["spellblock"] =@champ["spellblock"]+c_per_lvl("spellblock")
+        hash["movespeed"] = @champ["movespeed"] #placeholder
+        hash["hp"]=@champ["hp"]+c_per_lvl("hp")
+        hash["hpregen"]=@champ["hpregen"]+c_per_lvl("hpregen")
+        hash["mp"]=@champ["mp"]+c_per_lvl("mp")
+        hash["mpregen"]=@champ["mpregen"]+c_per_lvl("mpregen")
+        hash["range"]=@champ["range"] 
+        hash
     end 
     def calc_estimates *stuff  #will have to rewrite lots of stuff to get special items in
      
-     @estimates["raw_dps"] = (@stats["ad"]*(1+@stats["crit"]))*@stats["as"]
+     #@estimates["raw_dps"] = (@stats["FlatPhysicalDamageMod"]*(1+@stats["FlatCritChanceMod"]))*@stats["as"]
      
     end
-     def add_runes_stats
-     @stats["ad"] += @runes_stats["FlatPhysicalDamageMod"]+((@level-1)*@runes_stats["rFlatPhysicalDamageModPerLevel"])
-     @stats["ap"] += @runes_stats["FlatMagicDamageMod"]+((@level-1)*@runes_stats["rFlatMagicDamageModPerLevel"])
-     @stats["crit"]+= @runes_stats["FlatCritChanceMod"]
-     @stats["crit_damage"]+=@runes_stats["FlatCritDamageMod"]
-     @stats["armor_pen"]+=@runes_stats["rFlatArmorPenetrationMod"]
-     @stats["magic_pen"]+=@runes_stats["rFlatMagicPenetrationMod"]
+     def runes_stats # i kind of fucked in a way i'm doing this but whatever
+        def r_per_lvl key
+            key.gsub("Pool","")
+        key = key+"PerLevel"
+        key="r"+ key unless key[0]=='r'
+        @summed_runes[key]*(@level-1)
+        end 
+        summed_runes=Hash.new(0)
+        @runes.each do |i|
+            rune =  Rune.find(i)
+            p rune
+            rune.attributes.each do |k,v|
+                summed_runes[k] += v unless k=="name" || v.blank?
+            end
+        end
+        @summed_runes= summed_runes
+       
+     
+     
+     hash = Hash.new(0)
+     hash["FlatPhysicalDamageMod"]= summed_runes["FlatPhysicalDamageMod"]+r_per_lvl("FlatPhysicalDamageMod")
+     hash["FlatMagicDamageMod"]=summed_runes["FlatMagicDamageMod"]+r_per_lvl("FlatMagicDamageMod")
+     hash["PercentAttackSpeedMod"]=summed_runes["PercentAttackSpeedMod"]
+     hash["PercentCooldownMod"]=summed_runes["rPercentCooldownMod"]+r_per_lvl("rPercentCooldownMod")
+     hash["PercentMovementSpeedMod"]=summed_runes["PercentMovementSpeedMod"]
+     hash["FlatCritChanceMod"]=summed_runes["FlatCritChanceMod"]
+     hash["FlatCritDamageMod"]=summed_runes["FlatCritDamageMod"]
+     hash["FlatArmorMod"]=summed_runes["FlatArmorMod"]+r_per_lvl("FlatArmorMod")
+     hash["FlatSpellBlockMod"]=summed_runes["FlatSpellBlockMod"]+r_per_lvl("FlatSpellBlockMod")
+     hash["FlatHPPoolMod"]=summed_runes["FlatHPPoolMod"]+r_per_lvl("FlatHPPoolMod")
+     hash["FlatHPRegenMod"]=summed_runes["FlatHPRegenMod"]+r_per_lvl("FlatHPRegenMod")
+     hash["FlatMPPoolMod"]=summed_runes["FlatMPPoolMod"]+r_per_lvl("FlatMPPoolMod")
+     hash["FlatMPRegenMod"]=summed_runes["FlatMPRegenMod"]+r_per_lvl("FlatMPRegenMod")
+     hash["PercentHPPoolMod"]=summed_runes["PercentHPPoolMod"]
+     hash["FlatEnergyPoolMod"]=summed_runes["FlatEnergyPoolMod"]+r_per_lvl("FlatEnergyPoolMod")
+     hash["FlatEnergyRegenMod"]=summed_runes["FlatEnergyRegenMod"]
+     hash["rFlatArmorPenetrationMod"]=summed_runes["rFlatArmorPenetrationMod"]
+     hash["rFlatMagicPenetrationMod"]=summed_runes["rFlatMagicPenetrationMod"]
+     hash["PercentEXPBonus"]=summed_runes["PercentEXPBonus"]
+     hash["rFlatGoldPer10Mod"]=summed_runes["rFlatGoldPer10Mod"]
+     hash["rPercentTimeDeadMod"]=summed_runes["rPercentTimeDeadMod"]
+     hash["PercentLifeStealMod"]=summed_runes["PercentLifeStealMod"]
+     hash["PercentSpellVampMod"]=summed_runes["PercentSpellVampMod"]
+     hash
      end
-    
+    def humanize_stats #combines stats and makes nicer/shorter keys 
+    @nice_stats["ad"]=@item_stats["FlatPhysicalDamageMod"]+@runes_stats["FlatPhysicalDamageMod"]+@champ_stats["attackdamage"] #Attack Damage
+    @nice_stats["as"]=@champ_stats["attackspeed"]*(100+(@runes_stats["PercentAttackSpeedMod"]+@item_stats["PercentAttackSpeedMod"]+(@champ_stats["attackspeedperlevel"]*(@level-1)))) #Attack Speed
+    @nice_stats["ap"]=@item_stats["FlatMagicDamageMod"]+@runes_stats["FlatMagicDamageMod"]
+    @nice_stats["hp"]=(@item_stats["FlatHPPoolMod"]+@runes_stats["FlatHPPoolMod"])*(1+@runes_stats["PercentHPPoolMod"])
+    @nice_stats["mp"]=@item_stats["FlatMPPoolMod"]+@runes_stats["FlatMPPoolMod"]
+    end 
     def calc
         @estimates = Hash.new(0)
         @level = 18
-        @level = params[:level].to_i unless params[:level].to_i==0
+        @level = params[:level].to_i unless params[:level].blank?
         @items = session[:items]
+        @runes = session[:runes]
         @champ = session[:champ]
-        @stats = sum_item_stats
-        add_runes_stats
-        champ_stats 
+        @item_stats = item_stats
+        @runes_stats = runes_stats
+        @champ_stats = champ_stats 
+        @nice_stats = Hash.new(0)
         
+        humanize_stats
         calc_estimates
         session[:estimates] = @estimates
-        session[:stats] = @stats
+        session[:stats] = @nice_stats
     end
    
    helper_method :calc
