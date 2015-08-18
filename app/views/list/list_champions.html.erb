@@ -1,0 +1,20 @@
+<%= link_to "Back" , root_path %>
+<h1>Listing Champions</h1>
+
+<table>
+  
+  <tr>
+    <% sample = @champs.to_a.sample  %>
+    <% sample.attributes.each_key do |i|  %>
+    <th><%= i %></th>
+    <% end %>
+  </tr>
+   
+  <% @champs.each do |champ| %>
+    <tr>
+      <% champ.attributes.each_value do |i| %>
+      <td><%= i %></td>
+      <% end %>
+    </tr>
+  <% end %>
+</table>

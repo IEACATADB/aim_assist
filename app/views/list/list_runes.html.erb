@@ -1,0 +1,23 @@
+<%= link_to "Back" , root_path %>
+<h1>Listing Runes</h1>
+
+
+<table>
+  <tr>
+  <th>name</th>
+  <th>id</th>
+  <th>stats</th>
+  </tr>
+  <% @runes.each do |rune| %>
+    <tr>
+      <td><%= rune.attributes["name"]%></td>
+      <td><%= rune.attributes["id"]%></td>
+      <td>
+      <% rune.attributes.each do |k,i| %>
+      <%= k.to_s+" "+i.to_s unless i.blank? || k=="name"||k=="id" %>
+      <% end %>
+      </td>
+    </tr>
+  <% end %>
+  
+</table>

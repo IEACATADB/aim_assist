@@ -1,0 +1,19 @@
+<%= link_to "Back" , root_path %>
+<h1>Listing Items</h1>
+
+<table>
+  <tr>
+    <% sample = @items.to_a.sample  %>
+    <% sample.attributes.each_key do |i|  %>
+    <th><%= i  if i !="description"%></th>
+    <% end %>
+  </tr>
+ 
+  <% @items.each do |item| %>
+    <tr>
+      <% item.attributes.each do |k,i| %>
+      <td><%= i if k!="description" %></td>
+      <% end %>
+    </tr>
+  <% end %>
+</table>

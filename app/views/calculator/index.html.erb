@@ -1,0 +1,28 @@
+
+<h2><%= link_to "back" , root_path %></h2>
+
+<table>
+
+    <% @items.each do |i| %>
+    <tr>
+   <td><img src =  <%= 'https://ddragon.leagueoflegends.com/cdn/5.15.1/img/item/'+i.to_s+'.png'  %> ></td>
+    
+    
+   <td><%= i.inspect  %></td>
+   <td><%= Item.find(i)[:description] %></td>
+   </tr>
+    <% end %> 
+
+</table>
+<div>
+<img src = <%= 'https://ddragon.leagueoflegends.com/cdn/5.15.1/img/champion/'+@champ.key.to_s+'.png' %>>
+</div>
+<p>
+<%= render 'form' %>
+</p>
+<div id="stats">
+    <%= render 'stats' %>
+</div>
+<div id="estimates">
+ 
+</div>
