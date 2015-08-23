@@ -31,6 +31,7 @@ end
     item_= Item.create(id: item["id"],name: item["name"],description: item["sanitizedDescription"],cost: item["gold"]["total"])
     item["stats"].each do |key,value|
     item_.update(key.to_sym => value)
+    
     end 
 end
 (get_champ_list).each_value do |champ|
@@ -42,7 +43,7 @@ end
  end 
 end 
 get_runes.each do |id,hash|
- rune = Rune.create(id: id,name: hash["name"])
+ rune = Rune.create(id: id, name: hash["name"] ,r_type: hash["rune"]["type"].to_s)
  hash["stats"].each do |key,value|
  rune.update(key.to_sym => value)
  end 

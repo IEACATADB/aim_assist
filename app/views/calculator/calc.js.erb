@@ -1,2 +1,7 @@
-$('#stats').html(" <%= j(render 'stats') %>")
-$('#estimates').html(" <%= j (render 'estimates') %>")
+<% calc %>
+<% if session[:side]==:left %>
+$('#lefthalf #estimates').html(" <%= j (render 'estimates') %>")
+<% end %>
+<% if session[:side]==:right %>
+$('#righthalf #estimates').html(" <%= j (render 'estimates') %>")
+<%end%>

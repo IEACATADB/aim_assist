@@ -6,14 +6,15 @@ Rails.application.routes.draw do
 
   get 'welcome/index'
   
-  get 'calc/calc' => 'calculator#index'
+
+ get 'calc/get_stuff' => 'calculator#get_stuff'
   get 'calc' => 'calculator'
-  
+   
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
 
   # You can have the root of your site routed with "root"
-   root 'welcome#index' 
+   root 'calculator#index' 
 
   # Example of regular route:
   #   get 'products/:id' => 'catalog#view'

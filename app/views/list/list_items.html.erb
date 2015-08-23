@@ -3,6 +3,7 @@
 
 <table>
   <tr>
+    <th>icon</th>
   <th>name</th>
   <th>id</th>
   <th>cost</th>
@@ -11,6 +12,7 @@
   </tr>
   <% @items.each do |item| %>
     <tr>
+      <td><img src =  <%= 'https://ddragon.leagueoflegends.com/cdn/5.15.1/img/item/'+item["id"].to_s+'.png'  %> ></td>
       <td><%= item.attributes["name"]%></td>
       <td><%= item.attributes["id"]%></td>
       <td><%= item.attributes["cost"]%></td>

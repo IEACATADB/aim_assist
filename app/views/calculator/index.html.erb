@@ -1,26 +1,11 @@
+<%= render 'header' %>
 
-<h2><%= link_to "back" , root_path %></h2>
-
-<table>
-<% p @items%>
-    <% @items.each do |i| %>
-    <tr>
-   <td><img src =  <%= 'https://ddragon.leagueoflegends.com/cdn/5.15.1/img/item/'+i.to_s+'.png'  %> ></td>
-   <td><%= i.inspect  %></td>
-   <td><%= Item.find(i)[:description] %></td>
-   </tr>
-    <% end %> 
-
-</table>
-<div>
-<img src = <%= 'https://ddragon.leagueoflegends.com/cdn/5.15.1/img/champion/'+@champ.key.to_s+'.png' %>>
-</div>
-<p>
-<%= render 'form' %>
-</p>
-<div id="stats">
-    <%= render 'stats' %>
-</div>
-<div id="estimates">
- 
-</div>
+<div id="lefthalf" class="container" style="float:left; width:50%;">
+    <div id="game_form_l"><%= render 'game_form_left' %></div>
+    <%= render 'lefthalf'%></div>
+<div id="righthalf" class="container" style="float:right; width:50%;" >
+    <div id="game_form_r"><%= render 'game_form_right' %></div>
+    <%=  render 'righthalf'%>
+</div> 
+<%= render 'search_items' %>
+<script> $('.search').select2(); </script>

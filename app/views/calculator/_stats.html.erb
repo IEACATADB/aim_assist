@@ -1,4 +1,4 @@
-<% calc %>
-<% session[:stats].each do |s| %>
+<% side = session[:side] %>
+<% session[side][:stats].each do |s| %>
 <%= s.inspect %>
 <% end %>

@@ -1,10 +1,21 @@
 class CalculatorController < ApplicationController
-    #respond_to :html, :js
     
-    def index 
+    #TODO general  |comparison,error handling, masteries,abilities
+    #TODO items    |cdr,crit dmg,%hp,tenacity,look for mising stats,index of specials,case by case for specials
+    #TODO estimates|dmg reduction,per hit damage, per_hit/dps against target, fullcombo damage, fullcombo with auto weaving, per_spell 
+    def index  
+        #@api_key = Rails.application.secrets.API_KEY
+       
+        
+    end 
+   def search key
+    @items = Item.all if key=="items"
+   end
+    
+    private 
+    def get_stuff
         @api_key = Rails.application.secrets.API_KEY
         @region = params[:region].downcase
-        
         @items = []
         @runes = []
         id = name_to_s_id params[:name]
@@ -13,13 +24,25 @@ class CalculatorController < ApplicationController
         else 
              match_data id,params[:m_id]
         end 
-        session[:runes] = @runes
-        session[:items] = @items
-        session[:champ] = @champ
+       save_load
+       
+       @stuff = Hash.new
+       @side = params.include?("bleft") ? "left" : "right"
+       session[:side]= @side
+        @stuff[:runes] = @runes
+        @stuff[:items] = @items
+        @stuff[:champ] = @champ
+       
+       params.include?("bleft") ? session[:side]="left" : session[:side]="right"
+        session[:left] = @stuff  if  params.include?("bleft") 
+        session[:right] = @stuff  if  params.include?("bright") 
+       
+       
+    end
+    def save_load
+     
+         
     end 
-   
-    
-    private 
     def name_to_s_id string
         
         name = string.strip.downcase.gsub(/' '/,'')
@@ -69,6 +92,9 @@ class CalculatorController < ApplicationController
         end
         
     end 
+    def masteries_stats
+        
+    end 
     def item_stats
         items = []
         hash = Hash.new(0)
@@ -78,9 +104,10 @@ class CalculatorController < ApplicationController
         items.each do |i|
         i.attributes.each do |key,value|
             hash[key]+=value.to_f if key != "id" && key != "description" && key!="name" && key!="base_cost"
+            hash["cdr"]+=(value [/(\d+).{1,3}Cooldown Reduction/,0]).to_i if key =="description"
         end 
         end
-        hash["FlatCritChanceMod"]*=100
+       
        hash#.delete_if{|k,v| v.blank?||v==0.0}
     end 
     
@@ -104,24 +131,19 @@ class CalculatorController < ApplicationController
         hash["range"]=@champ["range"] 
         hash
     end 
-    def calc_estimates *stuff  #will have to rewrite lots of stuff to get special items in
-     
-     #@estimates["raw_dps"] = (@stats["FlatPhysicalDamageMod"]*(1+@stats["FlatCritChanceMod"]))*@stats["as"]
-     
-    end
-     def runes_stats # i kind of fucked in a way i'm doing this but whatever
+   
+     def runes_stats # i kind of fucked up with a way i'm doing this but whatever
         def r_per_lvl key
             key.gsub("Pool","")
         key = key+"PerLevel"
         key="r"+ key unless key[0]=='r'
-        @summed_runes[key]*(@level-1)
+        @summed_runes[key]*(@level)
         end 
         summed_runes=Hash.new(0)
         @runes.each do |i|
             rune =  Rune.find(i)
-            p rune
             rune.attributes.each do |k,v|
-                summed_runes[k] += v unless k=="name" || v.blank?
+                summed_runes[k] += v unless k=="name" || v.blank? || k=="r_type"
             end
         end
         @summed_runes= summed_runes
@@ -154,31 +176,99 @@ class CalculatorController < ApplicationController
      hash["PercentSpellVampMod"]=summed_runes["PercentSpellVampMod"]
      hash
      end
+    def calc_estimates *stuff  #will have to rewrite lots of stuff to get special items in
+     e_armor = 100
+     e_armor = params[:e_armor].to_f unless params[:e_armor].blank?
+     e_mr = 100
+     e_mr = params[:e_magres].to_f unless params[:e_magres].blank? 
+     
+     @estimates["raw_dps"] = (@nice_stats["ad"]*(1+(@nice_stats["critChance"]*(1+@nice_stats["critDamage"]))))*@nice_stats["as"]
+     @estimates["dps_against_target"] = @estimates["raw_dps"]*(100.0/(100.0+e_armor))
+     @estimates["p_damage_reduction"]=100*(1-(100.0/(100.0+@nice_stats["armor"])))
+     @estimates["s_damage_reduction"]=100*(1-(100.0/(100.0+@nice_stats["mr"])))
+     
+     
+    end
+    def split_runes
+        runes = []
+        @runes.each do |r|
+        runes << Rune.find(r) 
+        end
+        hash = Hash.new
+        hash[:reds] = runes.select{|i| i.attributes["r_type"] =="red"  }
+        hash[:yellows] = runes.select{|i| i.attributes["r_type"] =="yellow"  }
+        hash[:blues] =  runes.select{|i| i.attributes["r_type"] =="blue"  }
+        hash[:blacks] =  runes.select{|i| i.attributes["r_type"] =="black" }
+       
+        hash
+        
+    end
+        
     def humanize_stats #combines stats and makes nicer/shorter keys 
-    @nice_stats["ad"]=@item_stats["FlatPhysicalDamageMod"]+@runes_stats["FlatPhysicalDamageMod"]+@champ_stats["attackdamage"] #Attack Damage
-    @nice_stats["as"]=@champ_stats["attackspeed"]*(100+(@runes_stats["PercentAttackSpeedMod"]+@item_stats["PercentAttackSpeedMod"]+(@champ_stats["attackspeedperlevel"]*(@level-1)))) #Attack Speed
-    @nice_stats["ap"]=@item_stats["FlatMagicDamageMod"]+@runes_stats["FlatMagicDamageMod"]
-    @nice_stats["hp"]=(@item_stats["FlatHPPoolMod"]+@runes_stats["FlatHPPoolMod"])*(1+@runes_stats["PercentHPPoolMod"])
-    @nice_stats["mp"]=@item_stats["FlatMPPoolMod"]+@runes_stats["FlatMPPoolMod"]
+        @nice_stats["ad"]=@item_stats["FlatPhysicalDamageMod"]+@runes_stats["FlatPhysicalDamageMod"]+@champ_stats["attackdamage"] #Attack Damage
+        @nice_stats["as"]=(@champ_stats["attackspeed"]*(100+((@runes_stats["PercentAttackSpeedMod"]*100)+(@item_stats["PercentAttackSpeedMod"]*100)+(@champ_stats["attackspeedperlevel"]*(@level-1)))))/100.0 #Attack Speed
+        @nice_stats["ap"]=@item_stats["FlatMagicDamageMod"]+@runes_stats["FlatMagicDamageMod"]
+        @nice_stats["hp"]=(@champ_stats["hp"]+@item_stats["FlatHPPoolMod"]+@runes_stats["FlatHPPoolMod"])*(1+@runes_stats["PercentHPPoolMod"])
+        @nice_stats["mp"]=@champ_stats["mp"]+@item_stats["FlatMPPoolMod"]+@runes_stats["FlatMPPoolMod"]
+        @nice_stats["critChance"]=@item_stats["FlatCritChanceMod"]+@runes_stats["FlatCritChanceMod"]
+        @nice_stats["critDamage"]=2+@item_stats["FlatCritDamageMod"]+@runes_stats["FlatCritDamageMod"]
+        @nice_stats["armor"]=@champ_stats["armor"]+@runes_stats["FlatArmorMod"]+@item_stats["FlatArmorMod"]
+        @nice_stats["mr"]=@champ_stats["spellblock"]+@runes_stats['FlatSpellBlockMod']+@item_stats["FlatSpellBlockMod"]
+        @nice_stats["cdr"]=@runes_stats["PercentCooldownMod"]+@item_stats["cdr"]
+        #here go specials
+        @items.each do |i|
+            case i
+                when 1315..1319,3047,1338
+                @nice_stats["aa_damage_reduction"]=0.1
+                when 3031
+                @nice_stats["critDamage"]+=0.5
+                
+            end
+        end 
+        
+        case @champ["key"]
+            when "Yasuo"
+            @nice_stats["critChance"]*=2
+            @nice_stats["critDamage"]*=0.9
+        end 
+        
     end 
     def calc
+        @stuff= Hash.new
         @estimates = Hash.new(0)
+        @side = :left if params.include?("left")
+        @side = :right if params.include?("right")
+        
+       
+       @stuff = session[@side] unless @side.nil? 
         @level = 18
-        @level = params[:level].to_i unless params[:level].blank?
-        @items = session[:items]
-        @runes = session[:runes]
-        @champ = session[:champ]
+        @level = params[:level].to_i unless params[:level].nil?
+        @items = @stuff[:items]||session[:items] 
+        @runes = @stuff[:runes]||session[:runes]
+        @champ = @stuff[:champ]||session[:champ]
         @item_stats = item_stats
         @runes_stats = runes_stats
         @champ_stats = champ_stats 
+        @masteries_stats = masteries_stats
         @nice_stats = Hash.new(0)
         
         humanize_stats
         calc_estimates
-        session[:estimates] = @estimates
-        session[:stats] = @nice_stats
+
+        @stuff[:estimates]= @estimates
+        @stuff[:stats]= @nice_stats
+        @stuff[:champ]=@champ
+        @stuff[:items]= @items
+        @stuff[:runes]=@runes
+        @stuff[:separated_runes]= split_runes
+        session[:side] = @side
+        session[:left] = @stuff  if  params.include?("left") 
+        session[:right] = @stuff  if  params.include?("right") 
+        session[:initial]= false
     end
    
    helper_method :calc
+   helper_method :get_stuff
+   helper_method :search
     
 end

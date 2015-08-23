@@ -1,4 +1,10 @@
-<% calc %>
-<% session[:estimates].each do |e| %>
-<%= e.inspect %>
+<table>
+<% side = session[:side] %>
+<% session[side][:estimates].each do |e| %>
+<tr>
+<td><%= e[0] %></td>
+<td><%= e[-1] %></td>
+</tr>
+
 <% end %>
+</table>
