@@ -1,0 +1,4 @@
+<%=  select("search", "reds", @runes.select{|i| i.attributes["r_type"] =="red"  }.collect {|p| [ p.description, p.id ]  },{include_blank: true},{class:"search"} ) %>
+<%=  select("search", "yellows", @runes.select{|i| i.attributes["r_type"] =="yellow"  }.collect {|p| [ p.description, p.id ]  },{include_blank: true},{class:"search"} ) %>
+<%=  select("search", "blues", @runes.select{|i| i.attributes["r_type"] =="blue"  }.collect {|p| [ p.description, p.id ]  },{include_blank: true},{class:"search"} ) %>
+<%=  select("search", "blacks", @runes.select{|i| i.attributes["r_type"] =="black" }.collect {|p| [ p.description, p.id ]  },{include_blank: true},{class:"search"} ) %>

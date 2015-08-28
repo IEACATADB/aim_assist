@@ -1,0 +1,7 @@
+ <%= form_tag({controller: "calculator",action:"get_stuff"}, method: "GET",remote: true ) do %>
+        <%= text_field_tag :name,nil, placeholder: "summoners name" %>
+        <%#= text_field_tag :m_id,nil, placeholder: "game id(optional), will use your last game unless specified" %>
+        <%= select_tag :region, options_for_select(['BR', 'EUNE', 'EUW', 'KR', 'LAN', 'LAS', 'NA', 'OCE', 'RU', 'TR'],"EUW") %>
+         <%= hidden_field_tag :bleft %>
+        <%= submit_tag :search%>
+    <% end  %>

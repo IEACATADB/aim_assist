@@ -1,0 +1,18 @@
+<% stats = session[:initial][:stats] %>
+<% champ = session[:initial][:champ] %>
+<% estimates = session[:initial][:estimates] %>
+<table class="table table-condensed">
+    <th colspan=2>Before</th>
+    <tr><td>Champion</td><td><%= champ.name %></td></tr>
+    <tr id="initial_ad"><td>Attack Damage</td><td><%= stats["ad"].to_f.round(2)  %></td></tr>
+    <tr id="initial_ap"><td>Ability Power</td><td><%= stats["ap"].to_f.round(2)  %></td></tr>
+    <tr id="initial_as"><td>Attack Speed</td><td><%= stats["as"].to_f.round(2) %></td></tr>
+    <tr id="initial_critChance"><td>Crit Chance</td><td><%= stats["critChance"].to_f.round(2)  %></td></tr>
+    <tr id="initial_critDamage"><td>Crit Damage</td><td><%= stats["critDamage"].to_f.round(2)  %></td></tr>
+    <tr id="initial_lifesteal"><td>Life steal </td><td><%= stats["lifesteal"].to_f.round(2)  %></td></tr>
+    <tr id="initial_hp"><td>Health</td><td><%= stats["hp"].to_f.round(2)  %></td></tr>
+    <tr id="initial_mp"><td>Mana</td><td><%= stats["mp"].to_f.round(2)  %></td></tr>
+    <tr id="initial_armor"><td>Armor</td><td><%= stats["armor"].to_f.round(2)  %>(<%=estimates["p_damage_reduction"].to_f.round(2) %>)%</td></tr>
+    <tr id="initial_mr"><td>Magic Resistance</td><td><%= stats["mr"].to_f.round(2)  %>(<%=estimates["s_damage_reduction"].to_f.round(2)  %>)%</td></tr>
+    <tr id="initial_cdr"><td>Cooldown Reduction</td><td><%= stats["cdr"].to_f.round(2)  %></td></tr>
+</table>

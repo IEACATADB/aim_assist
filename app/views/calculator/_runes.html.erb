@@ -1,0 +1,19 @@
+
+<% runes =  session[:stuff][:separated_runes]  %>
+<table class="table-bordered table-hover">
+    <tr>
+    <th>Marks(<%= runes[:reds].size %>)</th>
+    <th>Seals(<%= runes[:yellows].size %>)</th>
+    <th>Glyphs(<%= runes[:blues].size %>)</th>
+    <th>Quints(<%= runes[:blacks].size %>)</th>
+    </tr>
+<% 9.times do |i| %>
+<tr>
+    <td><div class="rune_cell red" id="red<%=i %>"><%= runes[:reds][i].description unless i>runes[:reds].size %> </div></td>
+    <td><div class="rune_cell yellow" id="yellow<%=i %>"><%= runes[:yellows][i].description unless i >runes[:yellows].size %></div></td>
+    <td><div class="rune_cell blue" id="blue<%=i %>"><%= runes[:blues][i].description unless i >runes[:blues].size %></div></td>
+    <td><div class="rune_cell black" id="black<%=i %>"><%= runes[:blacks][i].description unless i>2 || i >runes[:blacks].size %></div></td>
+</tr>
+<% end %>
+
+</table>

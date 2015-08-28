@@ -1,0 +1,25 @@
+<% item = params[:item].nil? %>
+<% champion = params[:champion].nil? %>
+<% rune = params[:rune].nil? %>
+<% change_champ unless champion %>
+<% change_item unless item %>
+<% change_rune unless rune %>
+<% calc %>
+<% compare %>
+$('#champion').html("<%= j(render 'champion')%>")
+$('#items').html("<%= j(render 'items') %>") 
+$('#runes').html("<%= j(render 'runes')%>")
+$('#estimates').html(" <%= j (render 'estimates') %>")
+$('#stats').html(" <%= j(render 'stats') %>")
+
+<% session[:compared].each do |key,value| %>
+$('#initial_<%=key%>').attr('class',"<%= case value;when -1;"danger"; when 0 ; "warning" ; when 1 ; "success";end  %>");
+$('#stats #<%=key%>').attr('class',"<%= case value;when 1;"danger"; when 0 ; "warning" ; when -1 ; "success";end  %>");
+<% end %>
+<% if false %>
+ $('#compare').html("<%= j(render 'compared')%>") 
+ $('#initial .ad').addClass("<%= "success" if session[:compared][:ad] == 1
+"warning" if session[:compared][:ad] == 0
+"danger" if session[:compared][:ad] == -1 
+%>");
+ <% end %>

@@ -1,0 +1,1 @@
+  <%=  select("search", "item", Item.all.collect {|p| [ p.name, p.id ] }.delete_if{|name,id|  name.blank? || name.include?("chantment") || name.include?("nowdown")},{include_blank: true},{class:"search"} ) %>

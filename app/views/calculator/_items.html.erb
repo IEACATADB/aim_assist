@@ -1,0 +1,7 @@
+
+      <% stuff = session[:stuff]%>
+    <% stuff[:items].each_with_index do |i,index|  %>
+    
+  <img src =  <%= 'https://ddragon.leagueoflegends.com/cdn/5.16.1/img/item/'+i.to_s+'.png'%> class="item" id=<%=index %> >
+
+    <% end %> 
