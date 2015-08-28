@@ -6,7 +6,7 @@ Rails.application.routes.draw do
 
   get 'welcome/index'
   
-
+get 'calc/change'=> 'calculator#change'
  get 'calc/get_stuff' => 'calculator#get_stuff'
   get 'calc' => 'calculator'
    

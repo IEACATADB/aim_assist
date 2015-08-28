@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150822153200) do
+ActiveRecord::Schema.define(version: 20150825192659) do
 
   create_table "champions", force: :cascade do |t|
     t.string "name"
@@ -94,6 +94,7 @@ ActiveRecord::Schema.define(version: 20150822153200) do
     t.float  "PercentHPPoolMod"
     t.string "name"
     t.string "r_type"
+    t.string "description"
   end
 
   create_table "sessions", force: :cascade do |t|

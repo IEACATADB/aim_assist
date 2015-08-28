@@ -1,11 +1,12 @@
 <%= render 'header' %>
-
-<div id="lefthalf" class="container" style="float:left; width:50%;">
-    <div id="game_form_l"><%= render 'game_form_left' %></div>
+<div class="container well">
+<div id="lefthalf" class="col-md-6 " >
+    <div id="game_form_l" class="form-control input-lg"><%= render 'game_form_left' %></div>
     <%= render 'lefthalf'%></div>
-<div id="righthalf" class="container" style="float:right; width:50%;" >
-    <div id="game_form_r"><%= render 'game_form_right' %></div>
-    <%=  render 'righthalf'%>
+<div id="righthalf" class="col-md-6 "  >
+    
 </div> 
+</div>
+<%= render 'search_champions' %>
 <%= render 'search_items' %>
-<script> $('.search').select2(); </script>
+<%= render 'search_runes' %>

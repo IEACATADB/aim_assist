@@ -1,10 +1,7 @@
-<table>
-<% side = session[:side] %>
-<% session[side][:estimates].each do |e| %>
-<tr>
-<td><%= e[0] %></td>
-<td><%= e[-1] %></td>
-</tr>
-
-<% end %>
+<div class="panel-heading">Basic attacks only, uniques like shiv and BoRK are excluded</div>
+<table class="table">
+<% estimates =  session[:stuff][:estimates] %>
+<tr><td>Average per hit</td><td><%= estimates["avg"].to_f.round(2)  %></td></tr>
+<tr><td>DPS raw</td><td><%= estimates["raw_dps"].to_f.round(2) %></td></tr>
+<tr><td>DPS against target with <%= params[:e_armor].blank? ?  100 : params[:e_armor] %> armor</td><td><%= estimates["dps_against_target"].to_f.round(2) %></td></tr>
 </table>

@@ -5,7 +5,8 @@ class CalculatorController < ApplicationController
     #TODO estimates|dmg reduction,per hit damage, per_hit/dps against target, fullcombo damage, fullcombo with auto weaving, per_spell 
     def index  
         #@api_key = Rails.application.secrets.API_KEY
-       
+       reset_session
+       @runes =  Rune.all
         
     end 
    def search key
@@ -27,15 +28,11 @@ class CalculatorController < ApplicationController
        save_load
        
        @stuff = Hash.new
-       @side = params.include?("bleft") ? "left" : "right"
-       session[:side]= @side
         @stuff[:runes] = @runes
         @stuff[:items] = @items
         @stuff[:champ] = @champ
        
-       params.include?("bleft") ? session[:side]="left" : session[:side]="right"
-        session[:left] = @stuff  if  params.include?("bleft") 
-        session[:right] = @stuff  if  params.include?("bright") 
+      session[:stuff]= @stuff
        
        
     end
@@ -45,7 +42,7 @@ class CalculatorController < ApplicationController
     end 
     def name_to_s_id string
         
-        name = string.strip.downcase.gsub(/' '/,'')
+        name = string.strip.downcase.gsub(/[ ]/,'')
         response = JSON.parse HTTParty.get( 'https://'+@region+'.api.pvp.net/api/lol/'+@region+'/v1.4/summoner/by-name/'+name+'?api_key='+@api_key).body
         
         id = response[name]["id"].to_s
@@ -92,13 +89,13 @@ class CalculatorController < ApplicationController
         end
         
     end 
-    def masteries_stats
-        
-    end 
+    #def masteries_stats #maybe someday
+   # end 
     def item_stats
         items = []
         hash = Hash.new(0)
         @items.each do |i|
+            break if i === 0
             items << Item.find(i)
         end 
         items.each do |i|
@@ -108,7 +105,7 @@ class CalculatorController < ApplicationController
         end 
         end
        
-       hash#.delete_if{|k,v| v.blank?||v==0.0}
+       hash
     end 
     
     def champ_stats
@@ -132,7 +129,7 @@ class CalculatorController < ApplicationController
         hash
     end 
    
-     def runes_stats # i kind of fucked up with a way i'm doing this but whatever
+     def runes_stats # I kind of fucked up with a way i'm doing this but whatever
         def r_per_lvl key
             key.gsub("Pool","")
         key = key+"PerLevel"
@@ -143,7 +140,7 @@ class CalculatorController < ApplicationController
         @runes.each do |i|
             rune =  Rune.find(i)
             rune.attributes.each do |k,v|
-                summed_runes[k] += v unless k=="name" || v.blank? || k=="r_type"
+                summed_runes[k] += v unless v.is_a?(String) || v.blank?  
             end
         end
         @summed_runes= summed_runes
@@ -181,8 +178,8 @@ class CalculatorController < ApplicationController
      e_armor = params[:e_armor].to_f unless params[:e_armor].blank?
      e_mr = 100
      e_mr = params[:e_magres].to_f unless params[:e_magres].blank? 
-     
-     @estimates["raw_dps"] = (@nice_stats["ad"]*(1+(@nice_stats["critChance"]*(1+@nice_stats["critDamage"]))))*@nice_stats["as"]
+     @estimates["avg"] = @nice_stats["ad"]*(1+((@nice_stats["critChance"]*0.01)*(1+@nice_stats["critDamage"])))
+     @estimates["raw_dps"] = @estimates["avg"]*@nice_stats["as"]
      @estimates["dps_against_target"] = @estimates["raw_dps"]*(100.0/(100.0+e_armor))
      @estimates["p_damage_reduction"]=100*(1-(100.0/(100.0+@nice_stats["armor"])))
      @estimates["s_damage_reduction"]=100*(1-(100.0/(100.0+@nice_stats["mr"])))
@@ -199,7 +196,13 @@ class CalculatorController < ApplicationController
         hash[:yellows] = runes.select{|i| i.attributes["r_type"] =="yellow"  }
         hash[:blues] =  runes.select{|i| i.attributes["r_type"] =="blue"  }
         hash[:blacks] =  runes.select{|i| i.attributes["r_type"] =="black" }
+       @amounts = Hash.new()
+       @amounts[:reds]= hash[:reds].count
        
+       @amounts[:blues]= hash[:blues].count
+       @amounts[:yellows]= hash[:yellows].count
+       @amounts[:blacks]= hash[:blacks].count
+       puts @amounts
         hash
         
     end
@@ -210,11 +213,12 @@ class CalculatorController < ApplicationController
         @nice_stats["ap"]=@item_stats["FlatMagicDamageMod"]+@runes_stats["FlatMagicDamageMod"]
         @nice_stats["hp"]=(@champ_stats["hp"]+@item_stats["FlatHPPoolMod"]+@runes_stats["FlatHPPoolMod"])*(1+@runes_stats["PercentHPPoolMod"])
         @nice_stats["mp"]=@champ_stats["mp"]+@item_stats["FlatMPPoolMod"]+@runes_stats["FlatMPPoolMod"]
-        @nice_stats["critChance"]=@item_stats["FlatCritChanceMod"]+@runes_stats["FlatCritChanceMod"]
+        @nice_stats["critChance"]=(@item_stats["FlatCritChanceMod"]+@runes_stats["FlatCritChanceMod"])*100
         @nice_stats["critDamage"]=2+@item_stats["FlatCritDamageMod"]+@runes_stats["FlatCritDamageMod"]
         @nice_stats["armor"]=@champ_stats["armor"]+@runes_stats["FlatArmorMod"]+@item_stats["FlatArmorMod"]
         @nice_stats["mr"]=@champ_stats["spellblock"]+@runes_stats['FlatSpellBlockMod']+@item_stats["FlatSpellBlockMod"]
         @nice_stats["cdr"]=@runes_stats["PercentCooldownMod"]+@item_stats["cdr"]
+        @nice_stats["lifesteal"]=(@item_stats["PercentLifeStealMod"]*100)+@runes_stats["PercentLifeStealMod"]*100
         #here go specials
         @items.each do |i|
             case i
@@ -231,25 +235,23 @@ class CalculatorController < ApplicationController
             @nice_stats["critChance"]*=2
             @nice_stats["critDamage"]*=0.9
         end 
-        
+        # here go limits
+        @nice_stats["cdr"]=40 if @nice_stats["cdr"]>40
+        @nice_stats["critChance"]=100 if @nice_stats["critChance"]>100
     end 
+  
     def calc
         @stuff= Hash.new
         @estimates = Hash.new(0)
-        @side = :left if params.include?("left")
-        @side = :right if params.include?("right")
-        
-       
-       @stuff = session[@side] unless @side.nil? 
+        @stuff = session[:stuff] 
         @level = 18
         @level = params[:level].to_i unless params[:level].nil?
-        @items = @stuff[:items]||session[:items] 
-        @runes = @stuff[:runes]||session[:runes]
-        @champ = @stuff[:champ]||session[:champ]
+        @items = @stuff[:items]
+        @runes = @stuff[:runes]
+        @champ =  @stuff[:champ]
         @item_stats = item_stats
         @runes_stats = runes_stats
         @champ_stats = champ_stats 
-        @masteries_stats = masteries_stats
         @nice_stats = Hash.new(0)
         
         humanize_stats
@@ -258,17 +260,65 @@ class CalculatorController < ApplicationController
         @stuff[:estimates]= @estimates
         @stuff[:stats]= @nice_stats
         @stuff[:champ]=@champ
-        @stuff[:items]= @items
+        @stuff[:items]=@items
         @stuff[:runes]=@runes
         @stuff[:separated_runes]= split_runes
-        session[:side] = @side
-        session[:left] = @stuff  if  params.include?("left") 
-        session[:right] = @stuff  if  params.include?("right") 
-        session[:initial]= false
+        @stuff[:amount]=@amounts
+        session[:stuff]= @stuff
+        session[:initial]=@stuff.to_a.to_h if params[:commit]=="search"
     end
+    
+   def change_champ 
+   session[:stuff][:champ] = Champion.find(params[:champion])
+   end
+   
+   def change_item
+   session[:stuff][:items][params[:index].to_i] = params[:item].to_i
+   end
+   def change_rune
+       amount = session[:stuff][:amount]
+       reds_range = (1..amount[:reds]).to_a
+       blues_range = ((reds_range.last+1)..(reds_range.last+amount[:yellows])).to_a
+       yellows_range = ((blues_range.last+1)..(blues_range.last+amount[:blues])).to_a
+       blacks_range = ((yellows_range.last+1)..(yellows_range.last+amount[:blacks])).to_a
+       string = params[:id].to_s
+       index = reds_range[(string[-1].to_i)] if string.include?("red")
+       index = yellows_range[(string[-1].to_i)] if string.include?("yellow")
+       index = blues_range[(string[-1].to_i)] if string.include?("blue")
+       index = blacks_range[(string[-1].to_i)] if string.include?("black")
+     #  puts " #{reds_range} #{yellows_range} #{blues_range}  #{blacks_range} "
+       session[:stuff][:runes][index-1] = params[:rune].to_i
+     #  puts Rune.find(params[:rune].to_i).attributes
+  p session[:stuff][:runes]
+     #  puts string
+     #  puts index
+     #  p index 
+      # p session[:stuff][:runes]
+     #  p session[:stuff][:runes][index-1]
+   end
+   def compare 
+   hash = Hash.new
+   p session[:initial].hash
+   p session[:stuff].hash
+   hash["ad"] = session[:initial][:stats]["ad"] <=> session[:stuff][:stats]["ad"]
+   hash["ap"] = session[:initial][:stats]["ap"] <=> session[:stuff][:stats]["ap"]
+   hash["as"] = session[:initial][:stats]["as"] <=> session[:stuff][:stats]["as"]
+   hash["critChance"] = session[:initial][:stats]["critChance"] <=> session[:stuff][:stats]["critChance"]
+   hash["critDamage"] = session[:initial][:stats]["critDamage"] <=> session[:stuff][:stats]["critDamage"]
+   hash["lifesteal"] = session[:initial][:stats]["lifesteal"] <=> session[:stuff][:stats]["lifesteal"]
+   hash["hp"] = session[:initial][:stats]["hp"] <=> session[:stuff][:stats]["hp"]
+   hash["mp"] = session[:initial][:stats]["mp"] <=> session[:stuff][:stats]["mp"]
+   hash["armor"] = session[:initial][:stats]["armor"] <=> session[:stuff][:stats]["armor"]
+   hash["mr"] = session[:initial][:stats]["mr"] <=>  session[:stuff][:stats]["mr"]
+   hash["cdr"] = session[:initial][:stats]["cdr"] <=> session[:stuff][:stats]["cdr"]
+   session[:compared] = hash
+   end
    
    helper_method :calc
    helper_method :get_stuff
    helper_method :search
-    
+   helper_method :change_champ
+   helper_method :change_item
+    helper_method :change_rune
+    helper_method :compare
 end
