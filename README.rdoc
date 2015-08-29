@@ -1,28 +1,10 @@
-== README
-
-This README would normally document whatever steps are necessary to get the
-application up and running.
-
-Things you may want to cover:
-
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
-
-
-Please feel free to use a different markup language if you do not plan to run
-<tt>rake doc:app</tt>.
+==Description
+Aim Assist was created for Riot Games API Challenge 2.0 in order to create a tool that allows ad carry players to adjust their itembuilds after a game you can preview it here https://build-comparsion-thing-ieacatadb.c9.io/
+==Usage
+Search for a summoner to get build he used last game, then you may click on champion/items/runes to adjust it, after you can save results as an itemset 
+==Requirements
+Ruby 2.2.1
+Rails 4.2.1
+Postgresql
+==
+You'll need to specify API_KEY in secrets.yml in order for this to work 
