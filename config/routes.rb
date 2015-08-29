@@ -5,7 +5,7 @@ Rails.application.routes.draw do
   get 'list/list_runes'
 
   get 'welcome/index'
-  
+  get 'json' => 'calculator#generate_json'
 get 'calc/change'=> 'calculator#change'
  get 'calc/get_stuff' => 'calculator#get_stuff'
   get 'calc' => 'calculator'

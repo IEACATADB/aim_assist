@@ -1,6 +1,6 @@
 <%= form_tag(calc_path, method: :get, remote:true ) do %>
         <%= text_field_tag :e_armor,nil, placeholder: "enemy armor (default is 100)" %>
-        <%= select_tag :level, options_for_select([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],18) %>
+        <%#= select_tag :level, options_for_select([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],18) %>
         <%= hidden_field_tag :right %>
         <%= submit_tag  "calc"%>
     <% end  %>

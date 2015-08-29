@@ -11,11 +11,17 @@ $('#items').html("<%= j(render 'items') %>")
 $('#runes').html("<%= j(render 'runes')%>")
 $('#estimates').html(" <%= j (render 'estimates') %>")
 $('#stats').html(" <%= j(render 'stats') %>")
+$('#json').html(" <%= j(render 'save_set') %>")
 
 <% session[:compared].each do |key,value| %>
 $('#initial_<%=key%>').attr('class',"<%= case value;when -1;"danger"; when 0 ; "warning" ; when 1 ; "success";end  %>");
 $('#stats #<%=key%>').attr('class',"<%= case value;when 1;"danger"; when 0 ; "warning" ; when -1 ; "success";end  %>");
 <% end %>
+<% session[:compared][:estimates].each do |key,value| %>
+$('#initial_estimates #<%=key%>').attr('class',"<%= case value;when -1;"danger"; when 0 ; "warning" ; when 1 ; "success";end  %>");
+$('#estimates #<%=key%>').attr('class',"<%= case value;when 1;"danger"; when 0 ; "warning" ; when -1 ; "success";end  %>");
+<% end %>
+$('#initial_estimates').attr('class',"col-xs-6");
 <% if false %>
  $('#compare').html("<%= j(render 'compared')%>") 
  $('#initial .ad').addClass("<%= "success" if session[:compared][:ad] == 1

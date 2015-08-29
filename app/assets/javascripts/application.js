@@ -46,10 +46,12 @@ $(document).ready(function() {
     $("#lefthalf").on('click',(".rune_cell"),function(){
           r_index = $(this).attr('id');
        var string = $(this).attr('class');
-       var selector = $("#s2id_search_"+string.substr(10)+'s')
+       var original = string.substr(10)+'s'
+       var selector = $("#s2id_search_"+original)
        var offset = $(this).offset();
+       console.log(original);
        $(selector).css({width : "300px", display:"inline-block", position : "absolute" , top: offset.top, left: offset.left});
-       $('#'+string.substr(10)+'s').select2("open");
+       $('#search_'+original).select2("open");
    });
    
     
@@ -78,7 +80,6 @@ $(document).ready(function() {
     $("#search_champion,#search_item,#search_reds, #search_yellows,#search_blues,#search_blacks").on("select2-close", function() {
        $(this).select2("val", "");
        var s2 = "#s2id_"+this.id
-       console.log(s2)
        $(s2).css({ display:"none"});
     });
        

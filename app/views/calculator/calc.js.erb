@@ -1,3 +1,10 @@
 <% calc %>
-
+<% compare %>
 $('#estimates').html(" <%= j (render 'estimates') %>")
+$('#initial_estimates').html(" <%= j (render 'estimates') %>")
+<% session[:compared][:estimates].each do |key,value| %>
+$('#initial_estimates #<%=key%>').attr('class',"<%= case value;when -1;"danger"; when 0 ; "warning" ; when 1 ; "success";end  %>");
+$('#estimates #<%=key%>').attr('class',"<%= case value;when 1;"danger"; when 0 ; "warning" ; when -1 ; "success";end  %>");
+<% p "#{key.to_s+" "+value.to_s }" %>
+<% end %>
+$('#initial_estimates').attr('class',"col-xs-6");

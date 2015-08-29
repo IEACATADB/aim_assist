@@ -1,5 +1,5 @@
 class CalculatorController < ApplicationController
-    
+    require 'json'
     #TODO general  |comparison,error handling, masteries,abilities
     #TODO items    |cdr,crit dmg,%hp,tenacity,look for mising stats,index of specials,case by case for specials
     #TODO estimates|dmg reduction,per hit damage, per_hit/dps against target, fullcombo damage, fullcombo with auto weaving, per_spell 
@@ -11,6 +11,30 @@ class CalculatorController < ApplicationController
     end 
    def search key
     @items = Item.all if key=="items"
+   end
+   def generate_json
+       hash =Hash.new
+       items= Hash.new
+       arr = []
+       session[:stuff][:items].each do |i|
+        item=Hash.new
+        item["id"] = i.to_s 
+        item["count"] = 1
+        arr<< item
+       end
+       items["items"] = arr 
+       items["type"] = "core"
+       hash["map"] = "any"
+       hash["title"] =" Aim Assist"
+       hash["priority"] = false 
+       hash["mode"] = "any"
+       hash["type"] = "custom"
+       hash["sortrank"] = 0
+       hash["champion"] =  session[:stuff][:champ]["key"]
+       hash["blocks"] = items
+       data = JSON.pretty_generate(hash)
+       send_data data
+       
    end
     
     private 
@@ -25,7 +49,7 @@ class CalculatorController < ApplicationController
         else 
              match_data id,params[:m_id]
         end 
-       save_load
+       
        
        @stuff = Hash.new
         @stuff[:runes] = @runes
@@ -36,10 +60,7 @@ class CalculatorController < ApplicationController
        
        
     end
-    def save_load
-     
-         
-    end 
+
     def name_to_s_id string
         
         name = string.strip.downcase.gsub(/[ ]/,'')
@@ -178,13 +199,19 @@ class CalculatorController < ApplicationController
      e_armor = params[:e_armor].to_f unless params[:e_armor].blank?
      e_mr = 100
      e_mr = params[:e_magres].to_f unless params[:e_magres].blank? 
+     @estimates["i_raw_dps"] = session[:initial][:estimates]["i_raw_dps"] unless session[:initial].nil?
+     if params[:commit]=="search" 
+        @estimates["i_avg"] = (@nice_stats["ad"]*(1+((@nice_stats["critChance"]*0.01)*(1+@nice_stats["critDamage"])))).to_f
+        @estimates["i_raw_dps"] = (@estimates["i_avg"]*@nice_stats["as"]).to_f
+     end
+     @estimates["i_dps_against_target"] = @estimates["i_raw_dps"]*(100.0/(100.0+e_armor))
      @estimates["avg"] = @nice_stats["ad"]*(1+((@nice_stats["critChance"]*0.01)*(1+@nice_stats["critDamage"])))
      @estimates["raw_dps"] = @estimates["avg"]*@nice_stats["as"]
      @estimates["dps_against_target"] = @estimates["raw_dps"]*(100.0/(100.0+e_armor))
      @estimates["p_damage_reduction"]=100*(1-(100.0/(100.0+@nice_stats["armor"])))
      @estimates["s_damage_reduction"]=100*(1-(100.0/(100.0+@nice_stats["mr"])))
      
-     
+      
     end
     def split_runes
         runes = []
@@ -226,7 +253,8 @@ class CalculatorController < ApplicationController
                 @nice_stats["aa_damage_reduction"]=0.1
                 when 3031
                 @nice_stats["critDamage"]+=0.5
-                
+                when 3089
+                @nice_stats["ap"]*=1.35
             end
         end 
         
@@ -286,39 +314,43 @@ class CalculatorController < ApplicationController
        index = yellows_range[(string[-1].to_i)] if string.include?("yellow")
        index = blues_range[(string[-1].to_i)] if string.include?("blue")
        index = blacks_range[(string[-1].to_i)] if string.include?("black")
-     #  puts " #{reds_range} #{yellows_range} #{blues_range}  #{blacks_range} "
+       
        session[:stuff][:runes][index-1] = params[:rune].to_i
-     #  puts Rune.find(params[:rune].to_i).attributes
-  p session[:stuff][:runes]
-     #  puts string
-     #  puts index
-     #  p index 
-      # p session[:stuff][:runes]
-     #  p session[:stuff][:runes][index-1]
+
    end
    def compare 
-   hash = Hash.new
-   p session[:initial].hash
-   p session[:stuff].hash
-   hash["ad"] = session[:initial][:stats]["ad"] <=> session[:stuff][:stats]["ad"]
-   hash["ap"] = session[:initial][:stats]["ap"] <=> session[:stuff][:stats]["ap"]
-   hash["as"] = session[:initial][:stats]["as"] <=> session[:stuff][:stats]["as"]
-   hash["critChance"] = session[:initial][:stats]["critChance"] <=> session[:stuff][:stats]["critChance"]
-   hash["critDamage"] = session[:initial][:stats]["critDamage"] <=> session[:stuff][:stats]["critDamage"]
-   hash["lifesteal"] = session[:initial][:stats]["lifesteal"] <=> session[:stuff][:stats]["lifesteal"]
-   hash["hp"] = session[:initial][:stats]["hp"] <=> session[:stuff][:stats]["hp"]
-   hash["mp"] = session[:initial][:stats]["mp"] <=> session[:stuff][:stats]["mp"]
-   hash["armor"] = session[:initial][:stats]["armor"] <=> session[:stuff][:stats]["armor"]
-   hash["mr"] = session[:initial][:stats]["mr"] <=>  session[:stuff][:stats]["mr"]
-   hash["cdr"] = session[:initial][:stats]["cdr"] <=> session[:stuff][:stats]["cdr"]
-   session[:compared] = hash
+       hash = Hash.new
+    
+       hash["ad"] = session[:initial][:stats]["ad"] <=> session[:stuff][:stats]["ad"]
+       hash["ap"] = session[:initial][:stats]["ap"] <=> session[:stuff][:stats]["ap"]
+       hash["as"] = session[:initial][:stats]["as"] <=> session[:stuff][:stats]["as"]
+       hash["critChance"] = session[:initial][:stats]["critChance"] <=> session[:stuff][:stats]["critChance"]
+       hash["critDamage"] = session[:initial][:stats]["critDamage"] <=> session[:stuff][:stats]["critDamage"]
+       hash["lifesteal"] = session[:initial][:stats]["lifesteal"] <=> session[:stuff][:stats]["lifesteal"]
+       hash["hp"] = session[:initial][:stats]["hp"] <=> session[:stuff][:stats]["hp"]
+       hash["mp"] = session[:initial][:stats]["mp"] <=> session[:stuff][:stats]["mp"]
+       hash["armor"] = session[:initial][:stats]["armor"] <=> session[:stuff][:stats]["armor"]
+       hash["mr"] = session[:initial][:stats]["mr"] <=>  session[:stuff][:stats]["mr"]
+       hash["cdr"] = session[:initial][:stats]["cdr"] <=> session[:stuff][:stats]["cdr"]
+       session[:compared] = hash
+       est = Hash.new
+       p session[:initial][:estimates]
+       p session[:stuff][:estimates]
+       est["per_hit"] = session[:initial][:estimates]["i_avg"] <=> session[:stuff][:estimates]["avg"]
+       est["raw_dps"] = session[:initial][:estimates]["i_raw_dps"] <=> session[:stuff][:estimates]["raw_dps"]
+       est["target_dps"] = session[:stuff][:estimates]["i_dps_against_target"] <=> session[:stuff][:estimates]["dps_against_target"]
+       session[:compared][:estimates] = est
    end
    
+  
    helper_method :calc
    helper_method :get_stuff
    helper_method :search
    helper_method :change_champ
    helper_method :change_item
-    helper_method :change_rune
-    helper_method :compare
+   helper_method :change_rune
+   helper_method :compare
+   helper_method :generate_json
+    
+    
 end

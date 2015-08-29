@@ -1,12 +1,18 @@
-<%= render 'header' %>
+<% @title="Aim Assist" %>
+<head>
+  <title><%= @title %></title>
+</head>
 <div class="container well">
+    <div class="text-muted"><%= render 'header' %></div>
 <div id="lefthalf" class="col-md-6 " >
     <div id="game_form_l" class="form-control input-lg"><%= render 'game_form_left' %></div>
     <%= render 'lefthalf'%></div>
 <div id="righthalf" class="col-md-6 "  >
     
 </div> 
+
 </div>
+
 <%= render 'search_champions' %>
 <%= render 'search_items' %>
 <%= render 'search_runes' %>
