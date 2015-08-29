@@ -1,0 +1,6 @@
+<table id="initial_estimates" class="table table-responsive">
+<% estimates =  session[:initial][:estimates] %>
+<tr id="per_hit" ><td>Average per hit</td><td><%= estimates["i_avg"].to_f.round(2)  %></td></tr>
+<tr id="raw_dps"><td>DPS raw</td><td><%= estimates["i_raw_dps"].to_f.round(2) %></td></tr>
+<tr id="target_dps"><td>DPS against target with <%= params[:e_armor].blank? ?  100 : params[:e_armor] %> armor</td><td><%= session[:stuff][:estimates]["i_dps_against_target"].to_f.round(2) %></td></tr>
+</table>
